@@ -2,11 +2,10 @@ import { data, createNode } from './Utilities';
 
 class SuggestionDropdown {
     constructor() {
-        this.width = 0;
         this.isEmpty = true;
         this.isActive = false;
 
-        this.dropdownContent = document.createElement('ul');
+        this.shadow = document.createElement('ul');
         this.dropdownContent.className = 'dropdown-menu dropdown-menu-left';
 
         this.dropdown = document.createElement('div');

@@ -1,40 +1,28 @@
 import {
     data,
+    ensure,
+    ensureType,
     getGlobalOffset,
     getCursorPosition,
     getScrollLeftForInput,
-    makeAsyncQueueRunner,
     getSelectedTextNodes,
-    getComputedStyle
+    getComputedStyle,
+    getNextNode,
+    getFirstChildNode,
+    removeNodesBetween,
+    getNodeValue,
 } from './Utilities';
 import {
     IS_FIREFOX,
     CLONE_PROPERTIES
 } from './Constants';
-
-import SuggestionList from './SuggestionList';
-import SuggestionDropdown from './SuggestionDropdown';
-
-function splitValue(originalValue, cursorPosition, trigger) {
-    const value = originalValue.slice(0, cursorPosition);
-    let textAfterTrigger = value.split(trigger || /\W/).pop();
-    const textUptoTrigger = textAfterTrigger.length ? value.slice(0, 0 - textAfterTrigger.length) : value;
-    textAfterTrigger += originalValue.slice(cursorPosition);
-    return { textAfterTrigger, textUptoTrigger };
-}
-
-function getCharHeight(...elements) {
-    return Math.max(...elements.map(element => (
-        parseFloat(getComputedStyle(element, 'line-height'))
-    )));
-}
+import Suggestion from './Suggestion';
 
 // Invisible character
 const POSITIONER_CHARACTER = "\ufeff";
-function getCaretPosition(element, trigger) {
+function getCaretPosition(element) {
     if (data(element, 'isInput')) {
         const [cursorPosition] = getCursorPosition(element);
-        const { textAfterTrigger, textUptoTrigger } = splitValue(element.value, cursorPosition, trigger);
 
         // pre to retain special characters
         const clone = document.createElement('pre');
@@ -62,86 +50,54 @@ function getCaretPosition(element, trigger) {
             clone.style.overflow = 'hidden';
         }
 
-        // Extra styles for the clone depending on type of input
-        let charHeight;
-        if (element.tagName === 'INPUT') {
-            clone.appendChild(document.createTextNode(textUptoTrigger.replace(/ /g, '\u00A0')));
-            clone.appendChild(positioner);
-            clone.appendChild(document.createTextNode(textAfterTrigger.replace(/ /g, '\u00A0')));
+        clone.appendChild(document.createTextNode(element.value.slice(0, cursorPosition)));
+        clone.appendChild(positioner);
 
-            clone.style.overflowX = 'auto';
-            clone.style.whiteSpace = 'nowrap';
-            if (cursorPosition === element.value.length) {
-                clone.scrollLeft = clone.scrollWidth - clone.clientWidth;
-            } else {
-                clone.scrollLeft = Math.min(getScrollLeftForInput(element), clone.scrollWidth - clone.clientWidth);
-            }
-            charHeight = clone.offsetHeight - parseFloat(computed.paddingTop) - parseFloat(computed.paddingBottom);
-        } else {
-            clone.appendChild(document.createTextNode(textUptoTrigger));
-            clone.appendChild(positioner);
-            clone.appendChild(document.createTextNode(textAfterTrigger));
-
-            clone.style.maxWidth = '100%';
-            clone.style.whiteSpace = 'pre-wrap';
-            clone.style.wordWrap = 'break-word';
-            clone.scrollTop = element.scrollTop;
-            clone.scrollLeft = element.scrollLeft;
-            charHeight = getCharHeight(clone, positioner);
-        }
+        clone.style.maxWidth = '100%';
+        clone.style.whiteSpace = 'pre-wrap';
+        clone.style.wordWrap = 'break-word';
+        clone.scrollTop = element.scrollTop;
+        clone.scrollLeft = element.scrollLeft;
 
         const caretPosition = getGlobalOffset(positioner);
-        const inputPosition = getGlobalOffset(element);
-
-        caretPosition.top += charHeight - clone.scrollTop;
+        caretPosition.top -= clone.scrollTop;
         caretPosition.left -= clone.scrollLeft;
-
-        const diff = caretPosition.left - inputPosition.left;
-        if (diff < 0 || diff > element.clientWidth)
-            caretPosition.left = inputPosition.left;
-
         document.body.removeChild(clone);
         return caretPosition;
     } else {
-        const { startContainer, startOffset, endContainer, endOffset } = window.getSelection().getRangeAt(0);
-        const { startContainer: containerTextNode, startOffset: cursorPosition, direction } = getSelectedTextNodes();
-        const { textAfterTrigger, textUptoTrigger } = splitValue(containerTextNode.nodeValue, cursorPosition, trigger);
+        const { startContainer, startOffset } = window.getSelection().getRangeAt(0);
+        const { startContainer: containerTextNode, startOffset: cursorPosition } = getSelectedTextNodes();
 
         const parentNode = containerTextNode.parentNode;
         const referenceNode = containerTextNode.nextSibling;
-
         const positioner = document.createElement("span");
         positioner.appendChild(document.createTextNode(POSITIONER_CHARACTER));
         parentNode.insertBefore(positioner, referenceNode);
 
-        if (textAfterTrigger) {
-            containerTextNode.nodeValue = textUptoTrigger;
-            const remainingTextNode = document.createTextNode(textAfterTrigger);
+        const textBeforeCursor = containerTextNode.nodeValue.slice(0, cursorPosition);
+        const textAfterCursor = containerTextNode.nodeValue.slice(cursorPosition);
+        if (textAfterCursor) {
+            containerTextNode.nodeValue = textBeforeCursor;
+            const remainingTextNode = document.createTextNode(textAfterCursor);
             parentNode.insertBefore(remainingTextNode, referenceNode);
         }
 
         const caretPosition = getGlobalOffset(positioner);
-        const charHeight = getCharHeight(positioner);
-        caretPosition.top += charHeight;
 
         // Reset DOM to the state before changes
         parentNode.removeChild(positioner);
-        if (textAfterTrigger) {
+        if (textAfterCursor) {
             parentNode.removeChild(containerTextNode.nextSibling);
-            containerTextNode.nodeValue = textUptoTrigger + textAfterTrigger;
+            containerTextNode.nodeValue = textBeforeCursor + textAfterCursor;
         }
 
         const selection = window.getSelection();
         if (selection.setBaseAndExtent) {
-            if (direction) {
-                selection.setBaseAndExtent(startContainer, startOffset, endContainer, endOffset);
-            } else {
-                selection.setBaseAndExtent(endContainer, endOffset, startContainer, startOffset);
-            }
+            selection.setBaseAndExtent(startContainer, startOffset, startContainer, startOffset);
         } else {
             const range = document.createRange();
             range.setStart(startContainer, startOffset);
-            range.setEnd(endContainer, endOffset);
+            range.setEnd(startContainer, startOffset);
             selection.removeAllRanges();
             selection.addRange(range)
         }
@@ -149,21 +105,6 @@ function getCaretPosition(element, trigger) {
         return caretPosition;
     }
 }
-
-const getNextNode = node => {
-    let nextNode = node.nextSibling || node.parentNode.nextSibling;
-    while (nextNode.firstChild) nextNode = nextNode.firstChild;
-    return nextNode;
-};
-
-const removeNodesBetween = (startContainer, endContainer) => {
-    if (startContainer === endContainer) return;
-    let node = getNextNode(startContainer);
-    while (node !== endContainer) {
-        node.parentNode.removeChild(node);
-        node = getNextNode(startContainer);
-    }
-};
 
 const insertHtmlAfter = (node, html) => {
     const psuedoDom = document.createElement('div');
@@ -273,62 +214,36 @@ class AutoCompose {
         }
 
         this.inputs = [];
-        this.dropdown = new SuggestionDropdown();
+        this.suggestion = new Suggestion();
         this.onChange = options.onChange || Function.prototype;
-        this.maxSuggestions = options.maxSuggestions || 10;
 
-        // validate suggestions
-        this.suggestionLists = options.suggestions || [];
-        for (let i = 0; i < this.suggestionLists.length; i++) {
-            let suggestionList = this.suggestionLists[i];
-            if (!(suggestionList instanceof SuggestionList)) {
-                if (suggestionList.constructor !== Object) {
-                    suggestionList = { values: suggestionList };
-                }
-
-                if (!suggestionList.hasOwnProperty('caseSensitive') && options.hasOwnProperty('caseSensitive')) {
-                    suggestionList.caseSensitive = options.caseSensitive;
-                }
-
-                this.suggestionLists[i] = new SuggestionList(suggestionList);
-            }
-        }
+        ensure('AutoCompose', options, 'composer');
+        ensureType('AutoCompose', options, 'composer', 'function');
+        this.composer = options.composer;
 
         events: {
             const self = this;
-            let activeSuggestionList = null;
             let handledInKeyDown = false;
 
             this.onBlurHandler = function() {
-                self.dropdown.hide();
+                self.suggestion.hide();
             };
 
             this.onKeyDownHandler = function(e) {
-                if (self.dropdown.isActive) {
-                    const preventDefaultAction = () => {
-                        e.preventDefault();
-                        handledInKeyDown = true;
-                    };
-
-                    if (e.keyCode === 13 || e.keyCode === 9) {
+                if (self.suggestion.isActive) {
+                    if (e.keyCode === 9 || e.keyCode === 39 || e.keyCode ===40) {
                         setValue({
                             element: this,
                             trigger: activeSuggestionList.trigger,
-                            suggestion: self.dropdown.getValue(),
+                            suggestion: self.suggestion.getValue(),
                             onChange: self.onChange.bind(this)
                         });
-                        self.dropdown.hide();
-                        return preventDefaultAction();
-                    } else if (e.keyCode === 40) {
-                        self.dropdown.selectNext();
-                        return preventDefaultAction();
-                    } else if (e.keyCode === 38) {
-                        self.dropdown.selectPrev();
-                        return preventDefaultAction();
-                    } else if (e.keyCode === 27) {
-                        self.dropdown.hide();
-                        return preventDefaultAction();
+
+                        handledInKeyDown = true;
+                        e.preventDefault();
                     }
+
+                    self.suggestion.hide();
                 }
             };
 
@@ -339,81 +254,63 @@ class AutoCompose {
                     return;
                 }
 
-                let value;
+                self.suggestion.hide();
+                let preValue = '', postValue = '';
+
                 if (data(this, 'isInput')) {
                     const [startPosition, endPosition] = getCursorPosition(this);
-                    if (/\w/.test(this.value.charAt(endPosition) || ' ')) {
-                        self.dropdown.hide();
-                        return;
-                    }
+                    if (startPosition !== endPosition) return;
 
-                    value = this.value.slice(0, startPosition);
+                    preValue = this.value.slice(0, startPosition);
+                    postValue = this.value.slice(startPosition);
                 } else {
                     const { startContainer, startOffset, endContainer, endOffset } = getSelectedTextNodes();
-                    if (!startContainer || !endContainer ||
-                        /\w/.test(endContainer.nodeValue.charAt(endOffset) || ' ')) {
-                        self.dropdown.hide();
-                        return;
-                    }
+                    if (!startContainer || !endContainer) return;
 
-                    value = startContainer.nodeValue.slice(0, startOffset);
+                    let node = getFirstChildNode(this);
+                    while (node !== startContainer) {
+                        preValue += getNodeValue(node);
+                        node = getNextNode(node);
+                    }
+                    preValue += startContainer.nodeValue.slice(0, startOffset);
+
+                    node = getNextNode(endContainer, this);
+                    while (node) {
+                        postValue += getNodeValue(node);
+                        node = getNextNode(node, this);
+                    }
+                    postValue = endContainer.nodeValue.slice(endOffset) + postValue;
                 }
 
-                handleDropdown: {
+                handlesuggestion: {
                     keyUpIndex++;
-                    self.dropdown.empty();
+                    self.suggestion.empty();
 
-                    const executeQueue = makeAsyncQueueRunner();
-                    let i = 0, timer, triggerMatchFound = false;
-                    self.suggestionLists.forEach(suggestionList => {
-                        if (suggestionList.regex.test(value)) {
-                            triggerMatchFound = true;
+                    let timer;
+                    const caretPosition = getCaretPosition(this);
 
-                            ((i, asyncReference) => {
-                                const match = suggestionList.getMatch(value);
-                                const caretPosition = getCaretPosition(this, suggestionList.trigger);
+                    (asyncReference => {
+                        timer = setTimeout(() => {
+                            self.suggestion.showLoader(caretPosition);
+                        }, 0);
 
-                                if (self.dropdown.isEmpty) {
-                                    timer && clearTimeout(timer);
-                                    timer = setTimeout(() => {
-                                        self.dropdown.showLoader(caretPosition);
-                                    }, 0);
-                                }
+                        self.composer.call(this, preValue, postValue, result => {
+                            if (asyncReference !== keyUpIndex) return;
 
-                                suggestionList.getSuggestions.call(this, match, results => {
-                                    if (asyncReference !== keyUpIndex) return;
+                            timer && clearTimeout(timer);
+                            if (!result) return self.suggestion.hide();
 
-                                    executeQueue(() => {
-                                        timer && clearTimeout(timer);
-                                        if (self.dropdown.isEmpty) {
-                                            if (results.length) {
-                                                activeSuggestionList = suggestionList;
-                                                self.dropdown.fill(
-                                                    results.slice(0, self.maxSuggestions),
-                                                    suggestion => {
-                                                        setValue({
-                                                            element: this,
-                                                            trigger: suggestionList.trigger,
-                                                            suggestion: suggestion,
-                                                            onChange: self.onChange.bind(this)
-                                                        });
-                                                    }
-                                                );
-
-                                                self.dropdown.show(caretPosition);
-                                            } else {
-                                                self.dropdown.hide();
-                                            }
-                                        }
-                                    }, i);
+                            self.suggestion.fill(result, suggestion => {
+                                setValue({
+                                    element: this,
+                                    suggestion: suggestion,
+                                    onChange: self.onChange.bind(this)
                                 });
-                            })(i++, keyUpIndex);
-                        }
-                    });
+                            });
 
-                    if (!triggerMatchFound) {
-                        self.dropdown.hide();
-                    }
+                            self.suggestion.show(caretPosition);
+                        });
+                    })(keyUpIndex);
                 }
             };
         }
@@ -427,12 +324,12 @@ class AutoCompose {
 
         inputs.forEach(input => {
             // validate element
-            if (input.tagName === 'TEXTAREA' || (input.tagName === 'INPUT' && input.type === 'text')) {
+            if (input.tagName === 'TEXTAREA') {
                 data(input, 'isInput', true)
             } else if (input.isContentEditable) {
                 data(input, 'isInput', false)
             } else {
-                throw new Error('AutoCompose: Invalid input: only input[type = text], textarea and contenteditable elements are supported');
+                throw new Error('AutoCompose: Invalid input: only textarea and contenteditable elements are supported');
             }
 
             // init events

@@ -1,12 +1,12 @@
 {
   "name": "@avcs/autocompose",
-  "version": "1.7.2",
+  "version": "1.0.0",
   "description": "A JavaScript plugin to implement IDE like autocompletion in input, textarea or contenteditable fields.",
   "main": "lib/AutoCompose.js",
   "repository": "git@github.com:avcs06/AutoCompose.git",
   "scripts": {
     "clean": "rimraf lib dist es",
-    "build": "npm run clean && npm run build:commonjs && npm run build:umd && npm run build:umd:min && npm run build:es && npm run build:css",
+    "build": "npm run clean && npm run build:commonjs && npm run build:umd && npm run build:umd:min && npm run build:es",
     "build:commonjs": "cross-env BABEL_ENV=commonjs babel src --out-dir lib",
     "build:commonjs:watch": "npm run build:commonjs -- --watch",
     "build:es": "cross-env BABEL_ENV=es babel src --out-dir es",
@@ -14,16 +14,14 @@
     "build:umd": "cross-env BABEL_ENV=es NODE_ENV=development node_modules/.bin/rollup src/AutoCompose.js --config --sourcemap --output dist/AutoCompose.js",
     "build:umd:watch": "npm run build:umd -- --watch",
     "build:umd:min": "cross-env BABEL_ENV=es NODE_ENV=production rollup src/AutoCompose.js --config --output dist/AutoCompose.min.js",
-    "build:css": "cp dropdown.css dist && uglifycss dropdown.css --output dist/dropdown.min.css",
     "watch": "npm run build:umd -- --watch",
     "prepublish": "npm run build"
   },
   "keywords": [
-    "autocomplete",
-    "suggest",
+    "compose",
     "textarea",
     "contenteditable",
-    "dropdown"
+    "input"
   ],
   "author": "AvcS",
   "license": "MIT",
@@ -41,8 +39,7 @@
     "rollup-plugin-commonjs": "^8.0.2",
     "rollup-plugin-node-resolve": "^3.0.0",
     "rollup-plugin-uglify": "^2.0.1",
-    "rollup-watch": "^4.0.0",
-    "uglifycss": "0.0.29"
+    "rollup-watch": "^4.0.0"
   },
   "dependencies": {}
 }

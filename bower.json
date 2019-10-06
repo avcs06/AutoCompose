@@ -2,19 +2,17 @@
   "name": "avcs-autocompose",
   "description": "A JavaScript plugin to implement IDE like autocompletion in input, textarea or contenteditable fields.",
   "main": [
-    "dist/AutoCompose.js",
-    "dist/dropdown.css"
+    "dist/AutoCompose.js"
   ],
   "authors": [
     "AvcS"
   ],
   "license": "MIT",
   "keywords": [
-    "autocomplete",
-    "suggest",
+    "compose",
     "textarea",
     "contenteditable",
-    "dropdown"
+    "input"
   ],
   "homepage": "https://avcs.pro/autocompose",
   "ignore": [

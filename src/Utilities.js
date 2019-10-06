@@ -52,8 +52,9 @@ export const getCursorPosition = input => {
 
 export const getSelectedTextNodes = () => {
     const selection = window.getSelection();
-    const range = selection.getRangeAt(0);
+    if (selection.isCollapsed) return {};
 
+    const range = selection.getRangeAt(0);
     let { startContainer, startOffset } = range;
     const direction = selection.anchorNode === startContainer &&
         selection.anchorOffset === startOffset;
@@ -102,4 +103,41 @@ export const createNode = html => {
     var div = document.createElement('div');
     div.innerHTML = html.trim();
     return div.firstChild; 
+};
+
+export const getFirstChildNode = node => {
+    let nextNode = node;
+    while (nextNode.firstChild) nextNode = nextNode.firstChild;
+    return nextNode;
+};
+
+export const getNextNode = (node, root) => {
+    let nextNode;
+    if (node.nextSibling)
+        nextNode = node.nextSibling;
+    else {
+        nextNode = nextNode.parentNode;
+        while (nextNode !== root && !nextNode.nextSibling)
+            node = node.parentNode;
+        if (nextNode && nextNode !== root)
+            nextNode = nextNode.nextSibling
+        else return;
+    }
+
+    return getFirstChildNode(nextNode);
+};
+
+export const removeNodesBetween = (startContainer, endContainer) => {
+    if (startContainer === endContainer) return;
+    let node = getNextNode(startContainer);
+    while (node !== endContainer) {
+        node.parentNode.removeChild(node);
+        node = getNextNode(startContainer);
+    }
+};
+
+export const getNodeValue = node => {
+    if (node.tagName && node.tagName === 'BR')
+        return '\n';
+    return node.nodeValue || '';
 };
