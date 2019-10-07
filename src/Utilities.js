@@ -20,9 +20,6 @@ export const ensureType = (context, object, key, type) => {
     });
 };
 
-export const getComputedStyle = (element, style) =>
-    window.getComputedStyle(element).getPropertyValue(style);
-
 export const getGlobalOffset = $0 => {
     let node = $0, top = 0, left = 0;
 
@@ -32,18 +29,6 @@ export const getGlobalOffset = $0 => {
     } while (node = node.offsetParent);
 
     return {left, top};
-};
-
-export const getScrollLeftForInput = input => {
-    if (input.createTextRange) {
-        const range = input.createTextRange();
-        const inputStyle = window.getComputedStyle(input);
-        const paddingLeft = parseFloat(inputStyle.paddingLeft);
-        const rangeRect = range.getBoundingClientRect();
-        return input.getBoundingClientRect().left + input.clientLeft + paddingLeft - rangeRect.left;
-    } else {
-        return input.scrollLeft;
-    }
 };
 
 export const getCursorPosition = input => {
@@ -141,3 +126,5 @@ export const getNodeValue = node => {
         return '\n';
     return node.nodeValue || '';
 };
+
+export const isFirefox = () => window.mozInnerScreenX != null;

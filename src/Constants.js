@@ -1,4 +1,5 @@
-export const IS_FIREFOX = window.mozInnerScreenX != null;
+// Invisible character
+export const POSITIONER_CHARACTER = "\ufeff";
 
 export const CLONE_PROPERTIES = [
     'direction',  // RTL support

@@ -1,120 +1,96 @@
-import { data, createNode } from './Utilities';
+import { data, createNode, getGlobalOffset } from './Utilities';
+import { POSITIONER_CHARACTER } from './Constants';
 
-class SuggestionDropdown {
+class Suggestion {
     constructor() {
         this.isEmpty = true;
         this.isActive = false;
 
-        this.shadow = document.createElement('ul');
-        this.dropdownContent.className = 'dropdown-menu dropdown-menu-left';
+        this.host = document.createElement('div');
+        this.host.style.position = 'absolute';
+        this.host.style.cursor = 'text';
+        this.host.style.backgroundColor = 'transparent';
 
-        this.dropdown = document.createElement('div');
-        this.dropdown.className = 'dropdown open';
-        this.dropdown.style.position = 'absolute';
+        this.offset = document.createElement('div');
+        this.offset.appendChild(document.createTextNode(POSITIONER_CHARACTER));
+        this.content = document.createElement('div');
 
         this.hide();
-        this.dropdown.appendChild(this.dropdownContent);
-        document.body.appendChild(this.dropdown);
+        document.body.appendChild(this.host);
+        this.host.appendChild(this.offset);
+        this.host.appendChild(this.content);
     }
 
-    show(position) {
+    show(position, element) {
         if (position) {
-            this.dropdown.style.left = `${position.left}px`;
-            this.dropdown.style.top = `${position.top}px`;
+            const elementPosition = getGlobalOffset(element);
+            const elementStyles = window.getComputedStyle(element);
 
-            if ((position.left + this.width) > document.body.offsetWidth) {
-                this.dropdownContent.classList.remove('dropdown-menu-left');
-                this.dropdownContent.classList.add('dropdown-menu-right');
+            this.host.style.width = elementStyles.width;
+            this.host.style.left = `${elementPosition.left}px`;
+            this.host.style.top = `${position.top}px`;
+            this.host.style.lineHeight = elementStyles.lineHeight;
+            this.host.style.color = elementStyles.color;
+
+            this.host.style.paddingLeft = elementStyles.paddingLeft;
+            this.host.style.paddingRight = elementStyles.paddingRight;
+            this.host.style.paddingBottom = elementStyles.paddingBottom;
+            this.host.style.paddingRight = elementStyles.paddingRight;
+
+            if (!elementStyles.direction || elementStyles.direction === 'ltr') {
+                this.offset.style.float = 'left';
+                this.offset.style.width = `${position.left - elementPosition.left - parseFloat(elementStyles.paddingLeft || 0)}px`;
             } else {
-                this.dropdownContent.classList.remove('dropdown-menu-right');
-                this.dropdownContent.classList.add('dropdown-menu-left');
+                this.offset.style.float = 'right';
+                this.offset.style.width = `${parseFloat(elementStyles.width) - position.left + parseFloat(elementPosition.left)}px`;
             }
         }
 
-        this.dropdown.style.display = 'block';
+        this.host.style.display = 'block';
         this.isActive = true;
     }
 
     hide() {
-        this.dropdown.style.display = 'none';
+        this.host.style.display = 'none';
         this.isActive = false;
     }
 
     empty() {
-        this.dropdownContent.innerHTML = '';
         this.isEmpty = true;
+        while (this.content.firstChild)
+            this.content.removeChild(this.content.firstChild);
     }
 
-    fill(suggestions, onSet) {
+    fill(suggestion, onSet) {
         this.empty();
-        suggestions.forEach(suggestion => {
-            const dropdownLink = createNode(`<li><a>${suggestion.show}</a></li>`);
-            this.dropdownContent.appendChild(dropdownLink);
-            data(dropdownLink, 'suggestion', suggestion);
+        data(this.content, 'suggestion', suggestion);
 
-            dropdownLink.addEventListener('mouseenter', () => {
-                this.getActive().classList.remove('active');
-                dropdownLink.classList.add('active');
-            });
+        suggestion.split('').forEach((char, i) => {
+            const charNode = createNode(`<span>${char}</span>`);
+            charNode.style.opacity = 0.7;
+            this.content.appendChild(charNode);
 
-            dropdownLink.addEventListener('mousedown', (e) => {
-                onSet(suggestion);
+            charNode.addEventListener('mousedown', e => {
+                onSet(suggestion.slice(0, i + 1));
                 this.hide();
+
                 e.preventDefault();
                 e.stopPropagation();
             });
         });
 
-        // Calculate width
-        if (!this.isActive) {
-            this.show();
-        }
-
-        this.width = this.dropdownContent.offsetWidth;
-
-        if (!this.isActive) {
-            this.hide();
-        }
-
-        this.setActive();
         this.isEmpty = false;
     }
 
     showLoader(position) {
         this.empty();
-        this.dropdownContent.innerHTML = '<div class="autocompose-loader">Loading...</div>';
+        this.content.innerHTML = '';
         this.show(position);
     }
 
-    getActive() {
-        const activeLinks = Array.prototype.slice.call(this.dropdownContent.querySelectorAll('li.active'), 0);
-        while (activeLinks[1]) {
-            activeLinks.pop().classList.remove('active');
-        }
-
-        return activeLinks[0];
-    }
-
-    getValue(element) {
-        return data((element || this.getActive()), 'suggestion');
-    }
-
-    setActive(element = this.dropdownContent.firstElementChild, activeLink) {
-        activeLink && activeLink.classList.remove('active');
-        element.classList.add('active');
-    }
-
-    selectNext() {
-        const activeLink = this.getActive();
-        const nextLink = activeLink.nextElementSibling || this.dropdownContent.firstElementChild;
-        this.setActive(nextLink, activeLink);
-    }
-
-    selectPrev() {
-        const activeLink = this.getActive();
-        const prevLink = activeLink.previousElementSibling || this.dropdownContent.lastElementChild;
-        this.setActive(prevLink, activeLink);
+    getValue() {
+        return data(this.content, 'suggestion');
     }
 }
 
-export default SuggestionDropdown;
+export default Suggestion;
