@@ -1,23 +1,16 @@
 // Invisible character
 export const POSITIONER_CHARACTER = "\ufeff";
 
-export const CLONE_PROPERTIES = [
+export const HOST_PROPERTIES = [
+    'display',
     'direction',  // RTL support
     'boxSizing',
     'width',  // on Chrome and IE, exclude the scrollbar, so the mirror div wraps exactly as the textarea does
-    'height',
-    'overflowX',
-    'overflowY',  // copy the scrollbar for IE
 
-    'borderTopWidth',
     'borderRightWidth',
-    'borderBottomWidth',
     'borderLeftWidth',
-    'borderStyle',
 
-    'paddingTop',
     'paddingRight',
-    'paddingBottom',
     'paddingLeft',
 
     // https://developer.mozilla.org/en-US/docs/Web/CSS/font
@@ -40,4 +33,18 @@ export const CLONE_PROPERTIES = [
 
     'tabSize',
     'MozTabSize'
+];
+
+export const CLONE_PROPERTIES = [
+    ...HOST_PROPERTIES,
+    'height',
+    'overflowX',
+    'overflowY',  // copy the scrollbar for IE
+
+    'borderTopWidth',
+    'borderBottomWidth',
+    'borderStyle',
+
+    'paddingTop',
+    'paddingBottom',
 ];
