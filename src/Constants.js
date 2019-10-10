@@ -1,18 +1,7 @@
 // Invisible character
 export const POSITIONER_CHARACTER = "\ufeff";
 
-export const HOST_PROPERTIES = [
-    'display',
-    'direction',  // RTL support
-    'boxSizing',
-    'width',  // on Chrome and IE, exclude the scrollbar, so the mirror div wraps exactly as the textarea does
-
-    'borderRightWidth',
-    'borderLeftWidth',
-
-    'paddingRight',
-    'paddingLeft',
-
+export const FONT_PROPERTIES = [
     // https://developer.mozilla.org/en-US/docs/Web/CSS/font
     'fontStyle',
     'fontVariant',
@@ -20,7 +9,6 @@ export const HOST_PROPERTIES = [
     'fontStretch',
     'fontSize',
     'fontSizeAdjust',
-    'lineHeight',
     'fontFamily',
 
     'textAlign',
@@ -35,9 +23,21 @@ export const HOST_PROPERTIES = [
     'MozTabSize'
 ];
 
+export const HOST_PROPERTIES = [
+    ...FONT_PROPERTIES,
+    'direction',  // RTL support
+    'boxSizing',
+    'width',  // on Chrome and IE, exclude the scrollbar, so the mirror div wraps exactly as the textarea does
+
+    'borderRightWidth',
+    'borderLeftWidth',
+
+    'paddingRight',
+    'paddingLeft',
+];
+
 export const CLONE_PROPERTIES = [
     ...HOST_PROPERTIES,
-    'height',
     'overflowX',
     'overflowY',  // copy the scrollbar for IE
 
@@ -47,4 +47,8 @@ export const CLONE_PROPERTIES = [
 
     'paddingTop',
     'paddingBottom',
+
+    'lineHeight',
 ];
+
+export const FILLER = ' &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;';

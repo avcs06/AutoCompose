@@ -126,5 +126,3 @@ export const getNodeValue = node => {
         return '\n';
     return node.nodeValue || '';
 };
-
-export const isFirefox = () => window.mozInnerScreenX != null;

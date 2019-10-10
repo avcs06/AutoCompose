@@ -8,7 +8,6 @@ import {
   getNextNode,
   getFirstChildNode,
   getNodeValue,
-  isFirefox,
 } from './Utilities';
 import {
   POSITIONER_CHARACTER,
@@ -39,12 +38,10 @@ function getCaretPosition(element) {
     clone.style.left = `${elementPosition.left}px`;
     document.body.appendChild(clone);
 
-    if (isFirefox()) {
-      if (element.scrollHeight > parseInt(computed.height))
-        clone.style.overflowY = 'scroll';
-    } else {
-      clone.style.overflow = 'hidden';
-    }
+    if (element.scrollHeight > parseInt(computed.height))
+      clone.style.overflowY = 'scroll';
+    else
+      clone.style.overflowY = 'hidden';
 
     clone.appendChild(document.createTextNode(element.value.slice(0, cursorPosition)));
     clone.appendChild(positioner);
@@ -52,12 +49,10 @@ function getCaretPosition(element) {
     clone.style.maxWidth = '100%';
     clone.style.whiteSpace = 'pre-wrap';
     clone.style.wordWrap = 'break-word';
-    clone.scrollTop = element.scrollTop;
-    clone.scrollLeft = element.scrollLeft;
 
     const caretPosition = getGlobalOffset(positioner);
-    caretPosition.top -= clone.scrollTop;
-    caretPosition.left -= clone.scrollLeft;
+    caretPosition.top -= element.scrollTop;
+    caretPosition.left -= element.scrollLeft;
     document.body.removeChild(clone);
     return caretPosition;
   } else {
@@ -188,30 +183,31 @@ class AutoCompose {
           const [startPosition, endPosition] = getCursorPosition(this);
           if (startPosition !== endPosition) return;
 
-          preValue = this.value.slice(0, startPosition);
           postValue = this.value.slice(startPosition);
+          if (postValue.trim()) return;
+          preValue = this.value.slice(0, startPosition);
         } else {
           const { startContainer, startOffset, endContainer, endOffset } = getSelectedTextNodes();
           if (!startContainer || !endContainer) return;
 
-          let node = getFirstChildNode(this);
-          while (node !== startContainer) {
-            preValue += getNodeValue(node);
-            node = getNextNode(node);
-          }
-          preValue += startContainer.nodeValue.slice(0, startOffset);
-
-          node = getNextNode(endContainer, this);
+          let node = getNextNode(endContainer, this);
           while (node) {
             postValue += getNodeValue(node);
             node = getNextNode(node, this);
           }
           postValue = endContainer.nodeValue.slice(endOffset) + postValue;
+          if (postValue.trim()) return;
+
+          node = getFirstChildNode(this);
+          while (node !== startContainer) {
+            preValue += getNodeValue(node);
+            node = getNextNode(node);
+          }
+          preValue += startContainer.nodeValue.slice(0, startOffset);
         }
 
         handlesuggestion: {
           keyUpIndex++;
-          self.suggestion.empty();
 
           let timer;
           const caretPosition = getCaretPosition(this);
@@ -221,7 +217,7 @@ class AutoCompose {
               self.suggestion.showLoader(caretPosition);
             }, 0);
 
-            self.composer.call(this, preValue, postValue, result => {
+            self.composer.call(this, preValue, result => {
               if (asyncReference !== keyUpIndex) return;
 
               timer && clearTimeout(timer);
