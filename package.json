@@ -1,7 +1,7 @@
 {
   "name": "@avcs/autocompose",
   "version": "1.0.0",
-  "description": "A JavaScript plugin to implement IDE like autocompletion in input, textarea or contenteditable fields.",
+  "description": "A JavaScript plugin to implement gmail like smart compose",
   "main": "lib/AutoCompose.js",
   "repository": "git@github.com:avcs06/AutoCompose.git",
   "scripts": {
@@ -11,17 +11,20 @@
     "build:commonjs:watch": "npm run build:commonjs -- --watch",
     "build:es": "cross-env BABEL_ENV=es babel src --out-dir es",
     "build:es:watch": "npm run build:es -- --watch",
-    "build:umd": "cross-env BABEL_ENV=es NODE_ENV=development node_modules/.bin/rollup src/AutoCompose.js --config --sourcemap --output dist/AutoCompose.js",
-    "build:umd:watch": "npm run build:umd -- --watch",
-    "build:umd:min": "cross-env BABEL_ENV=es NODE_ENV=production rollup src/AutoCompose.js --config --output dist/AutoCompose.min.js",
-    "watch": "npm run build:umd -- --watch",
+    "build:umd": "npm run build:umd:main && npm run build:umd:text",
+    "build:umd:main": "cross-env BABEL_ENV=es NODE_ENV=development rollup src/AutoCompose.js --config --sourcemap --name AutoCompose --output dist/AutoCompose.js",
+    "build:umd:main:watch": "npm run build:umd:main -- --watch",
+    "build:umd:text": "cross-env BABEL_ENV=es NODE_ENV=development rollup src/AutoComposeTextarea.js --config --sourcemap --name AutoComposeTextarea --output dist/AutoComposeTextarea.js",
+    "build:umd:text:watch": "npm run build:umd:text -- --watch",
+    "build:umd:min": "npm run build:umd:main:min && npm run build:umd:text:min",
+    "build:umd:main:min": "cross-env BABEL_ENV=es NODE_ENV=production rollup src/AutoCompose.js --config --name AutoCompose --output dist/AutoCompose.min.js",
+    "build:umd:text:min": "cross-env BABEL_ENV=es NODE_ENV=production rollup src/AutoComposeTextarea.js --config --name AutoComposeTextarea --output dist/AutoComposeTextarea.min.js",
     "prepublish": "npm run build"
   },
   "keywords": [
-    "compose",
+    "smart compose",
     "textarea",
-    "contenteditable",
-    "input"
+    "contenteditable"
   ],
   "author": "AvcS",
   "license": "MIT",

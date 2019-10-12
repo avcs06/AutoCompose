@@ -1,18 +1,18 @@
 {
   "name": "avcs-autocompose",
-  "description": "A JavaScript plugin to implement IDE like autocompletion in input, textarea or contenteditable fields.",
+  "description": "A JavaScript plugin to implement gmail like smart compose",
   "main": [
-    "dist/AutoCompose.js"
+    "dist/AutoCompose.js",
+    "dist/AutoComposeTextarea.js"
   ],
   "authors": [
     "AvcS"
   ],
   "license": "MIT",
   "keywords": [
-    "compose",
+    "smart compose",
     "textarea",
-    "contenteditable",
-    "input"
+    "contenteditable"
   ],
   "homepage": "https://avcs.pro/autocompose",
   "ignore": [

@@ -1,7 +1,7 @@
-import { data, createNode, getGlobalOffset } from './Utilities';
-import { POSITIONER_CHARACTER, HOST_PROPERTIES, FONT_PROPERTIES, FILLER } from './Constants';
+import { createNode, getGlobalOffset } from './node-utils';
+import { POSITIONER_CHARACTER, HOST_PROPERTIES, FONT_PROPERTIES, FILLER } from './constants';
 
-class Suggestion {
+class OverlaySuggestion {
     constructor() {
         this.isEmpty = true;
         this.isActive = false;
@@ -140,14 +140,9 @@ class Suggestion {
         this.isEmpty = false;
     }
 
-    showLoader(position) {
-        this.empty();
-        this.show(position);
-    }
-
     getValue() {
         return this.suggestion;
     }
 }
 
-export default Suggestion;
+export default OverlaySuggestion;

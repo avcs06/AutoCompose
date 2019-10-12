@@ -1,290 +1,206 @@
+import { INLINE_SUGGESTION_ID } from './constants';
+import { data, ensure, ensureType } from './utils';
 import {
-  data,
-  ensure,
-  ensureType,
-  getGlobalOffset,
-  getCursorPosition,
-  getSelectedTextNodes,
-  getNextNode,
-  getFirstChildNode,
-  getNodeValue,
-} from './Utilities';
-import {
-  POSITIONER_CHARACTER,
-  CLONE_PROPERTIES
-} from './Constants';
-import Suggestion from './Suggestion';
-
-function getCaretPosition(element) {
-  if (data(element, 'isInput')) {
-    const [cursorPosition] = getCursorPosition(element);
-
-    // pre to retain special characters
-    const clone = document.createElement('pre');
-    clone.id = 'autocompose-positionclone';
-
-    const positioner = document.createElement('span');
-    positioner.appendChild(document.createTextNode(POSITIONER_CHARACTER));
-
-    const computed = window.getComputedStyle(element);
-    CLONE_PROPERTIES.forEach(prop => {
-      clone.style[prop] = computed[prop];
-    });
-
-    const elementPosition = getGlobalOffset(element);
-    clone.style.opacity = 0;
-    clone.style.position = 'absolute';
-    clone.style.top = `${elementPosition.top}px`;
-    clone.style.left = `${elementPosition.left}px`;
-    document.body.appendChild(clone);
-
-    if (element.scrollHeight > parseInt(computed.height))
-      clone.style.overflowY = 'scroll';
-    else
-      clone.style.overflowY = 'hidden';
-
-    clone.appendChild(document.createTextNode(element.value.slice(0, cursorPosition)));
-    clone.appendChild(positioner);
-
-    clone.style.maxWidth = '100%';
-    clone.style.whiteSpace = 'pre-wrap';
-    clone.style.wordWrap = 'break-word';
-
-    const caretPosition = getGlobalOffset(positioner);
-    caretPosition.top -= element.scrollTop;
-    caretPosition.left -= element.scrollLeft;
-    document.body.removeChild(clone);
-    return caretPosition;
-  } else {
-    const { startContainer, startOffset, endContainer, endOffset } = window.getSelection().getRangeAt(0);
-    const { startContainer: containerTextNode, startOffset: cursorPosition } = getSelectedTextNodes();
-
-    const parentNode = containerTextNode.parentNode;
-    const referenceNode = containerTextNode.nextSibling;
-    const positioner = document.createElement("span");
-    positioner.appendChild(document.createTextNode(POSITIONER_CHARACTER));
-    parentNode.insertBefore(positioner, referenceNode);
-
-    const textBeforeCursor = containerTextNode.nodeValue.slice(0, cursorPosition);
-    const textAfterCursor = containerTextNode.nodeValue.slice(cursorPosition);
-    if (textAfterCursor) {
-      containerTextNode.nodeValue = textBeforeCursor;
-      const remainingTextNode = document.createTextNode(textAfterCursor);
-      parentNode.insertBefore(remainingTextNode, referenceNode);
-    }
-
-    const caretPosition = getGlobalOffset(positioner);
-
-    // Reset DOM to the state before changes
-    parentNode.removeChild(positioner);
-    if (textAfterCursor) {
-      parentNode.removeChild(containerTextNode.nextSibling);
-      containerTextNode.nodeValue = textBeforeCursor + textAfterCursor;
-    }
-
-    const selection = window.getSelection();
-    if (selection.setBaseAndExtent) {
-      selection.setBaseAndExtent(startContainer, startOffset, endContainer, endOffset);
-    } else {
-      const range = document.createRange();
-      range.setStart(startContainer, startOffset);
-      range.setEnd(endContainer, endOffset);
-      selection.removeAllRanges();
-      selection.addRange(range)
-    }
-
-    return caretPosition;
-  }
-}
-
-const setValue = ({ element, suggestion, onChange }) => {
-  if (data(element, 'isInput')) {
-    const [startPosition] = getCursorPosition(element);
-    const originalValue = element.value;
-    const value = originalValue.slice(0, startPosition) + suggestion;
-
-    element.value = value + originalValue.slice(startPosition);
-    element.focus();
-
-    const cursorPosition = value.length;
-    element.setSelectionRange(cursorPosition, cursorPosition);
-  } else {
-    const { startContainer, startOffset, endContainer, endOffset } = getSelectedTextNodes();
-    const selection = window.getSelection();
-    const range = document.createRange();
-
-    const preValue = startContainer.nodeValue.slice(0, startOffset);
-    const postValue = endContainer.nodeValue.slice(endOffset);
-    startContainer.nodeValue = prevalue + suggestion + postValue;
-
-    const cursorPosition = preValue.length + suggestion.length;
-    range.setStart(startContainer, cursorPosition);
-    range.setEnd(startContainer, cursorPosition);
-    selection.removeAllRanges();
-    selection.addRange(range);
-  }
-
-  onChange(suggestion);
-};
+    getSelectedTextNodes,
+    getNodeValue,
+    setSelection,
+    getPrevNode,
+    getNextNode,
+    createNode,
+} from './node-utils';
 
 class AutoCompose {
-  constructor(options, ...inputs) {
-    if (!options) {
-      throw new Error(`AutoCompose: Missing required parameter, options`);
-    }
+    constructor(options, ...inputs) {
+        if (!options)
+            throw new Error(`AutoCompose: Missing required parameter, options`);
 
-    if (typeof options === 'function')
-      options = { composer: options };
+        if (typeof options === 'function')
+            options = { composer: options };
 
-    this.inputs = [];
-    this.suggestion = new Suggestion();
-    this.onChange = options.onChange || Function.prototype;
+        this.inputs = [];
+        this.onChange = options.onChange || Function.prototype;
+        this.onReject = options.onReject || Function.prototype;
 
-    ensure('AutoCompose', options, 'composer');
-    ensureType('AutoCompose', options, 'composer', 'function');
-    this.composer = options.composer;
+        ensure('AutoCompose', options, 'composer');
+        ensureType('AutoCompose', options, 'composer', 'function');
+        this.composer = options.composer;
 
-    events: {
-      const self = this;
-      let handledInKeyDown = false;
+        events: {
+            const self = this;
+            let handledInKeyDown = false, suggestionNode = null, activeSuggestion = null;
 
-      this.onBlurHandler = function() {
-        self.suggestion.hide();
-      };
+            const clearSuggestion = normalize => {
+                const parentNode = suggestionNode.parentNode;
+                parentNode.removeChild(suggestionNode);
+                normalize && parentNode.normalize();
+                suggestionNode = activeSuggestion = null;
+            };
 
-      this.onKeyDownHandler = function(e) {
-        if (self.suggestion.isActive) {
-          if (e.keyCode === 9 || e.keyCode === 39 || e.keyCode ===40) {
-            setValue({
-              element: this,
-              suggestion: self.suggestion.getValue(),
-              onChange: self.onChange.bind(this)
-            });
+            const acceptSuggestion = ignoreCursor => {
+                const suggestion = suggestionNode.firstChild.nodeValue;
+                suggestionNode.parentNode.insertBefore(suggestionNode.firstChild, suggestionNode);
+                const insertedNode = suggestionNode.previousSibling;
 
-            handledInKeyDown = true;
-            e.preventDefault();
-          }
-
-          self.suggestion.hide();
-        }
-      };
-
-      let keyUpIndex = 0;
-      this.onKeyUpHandler = function(e) {
-        if (handledInKeyDown) {
-          handledInKeyDown = false;
-          return;
-        }
-
-        self.suggestion.hide();
-        let preValue = '', postValue = '';
-
-        if (data(this, 'isInput')) {
-          const [startPosition, endPosition] = getCursorPosition(this);
-          if (startPosition !== endPosition) return;
-
-          postValue = this.value.slice(startPosition);
-          if (postValue.trim()) return;
-          preValue = this.value.slice(0, startPosition);
-        } else {
-          const { startContainer, startOffset, endContainer, endOffset } = getSelectedTextNodes();
-          if (!startContainer || !endContainer) return;
-
-          let node = getNextNode(endContainer, this);
-          while (node) {
-            postValue += getNodeValue(node);
-            node = getNextNode(node, this);
-          }
-          postValue = endContainer.nodeValue.slice(endOffset) + postValue;
-          if (postValue.trim()) return;
-
-          node = getFirstChildNode(this);
-          while (node !== startContainer) {
-            preValue += getNodeValue(node);
-            node = getNextNode(node);
-          }
-          preValue += startContainer.nodeValue.slice(0, startOffset);
-        }
-
-        handlesuggestion: {
-          keyUpIndex++;
-
-          let timer;
-          const caretPosition = getCaretPosition(this);
-
-          (asyncReference => {
-            timer = setTimeout(() => {
-              self.suggestion.showLoader(caretPosition);
-            }, 0);
-
-            self.composer.call(this, preValue, result => {
-              if (asyncReference !== keyUpIndex) return;
-
-              timer && clearTimeout(timer);
-              if (!result) return self.suggestion.hide();
-
-              self.suggestion.fill(result, suggestion => {
-                setValue({
-                  element: this,
-                  suggestion: suggestion,
-                  onChange: self.onChange.bind(this)
+                clearSuggestion();
+                !ignoreCursor && setSelection(range => {
+                    range.setStartAfter(insertedNode);
+                    range.setEndAfter(insertedNode);
                 });
-              });
 
-              self.suggestion.show(caretPosition, this);
-            });
-          })(keyUpIndex);
+                this.onChange({
+                    suggestion: activeSuggestion,
+                    acceptedSuggestion: suggestion
+                });
+            };
+
+            const rejectSuggestion = () => {
+                clearSuggestion();
+                this.onReject({ suggestion: activeSuggestion });
+            };
+
+            const isSuggestionTextNode = node => node.parentNode === suggestionNode;
+            const isAfterSuggestionNode = node => {
+                while ((node = getPrevNode(node)) && isSuggestionTextNode(node));
+                return Boolean(node);
+            };
+
+            this.onBlurHandler = () => suggestionNode && clearSuggestion(true);
+            this.onKeyDownHandler = function (e) {
+                if (suggestionNode) {
+                    if (e.keyCode === 9 || e.keyCode === 39 || e.keyCode === 40) {
+                        acceptSuggestion();
+                        handledInKeyDown = true;
+                        e.preventDefault();
+                    } else {
+                        rejectSuggestion();
+                    }
+                }
+            };
+
+            let keyUpIndex = 0;
+            this.onKeyUpHandler = function (e) {
+                if (e.type === 'keyup' && handledInKeyDown) {
+                    handledInKeyDown = false;
+                    return;
+                }
+
+                let { node: textNode, offset } = getSelectedTextNodes();
+                if (!textNode) return;
+
+                const isSuggestionNode = isSuggestionTextNode(textNode);
+                if (e.type === 'mouseup' && suggestionNode) {
+                    if (isSuggestionNode && offset) {
+                        textNode.nodeValue = textNode.nodeValue.slice(0, offset);
+                        return acceptSuggestion();
+                    } else if (isAfterSuggestionNode(textNode)) {
+                        return acceptSuggestion(true);
+                    }
+                }
+
+                if (isSuggestionNode) {
+                    try {
+                        textNode = getPrevNode(suggestionNode);
+                        offset = textNode.nodeValue.length;
+                    } catch(e) {
+                        textNode = getNextNode(suggestionNode);
+                        offset = 0;
+                    }
+                }
+                if (textNode.nodeType !== textNode.TEXT_NODE) return;
+
+                suggestionNode && rejectSuggestion();
+                postValue: {
+                    let postValue = textNode.nodeValue.slice(offset);
+                    if (postValue.trim()) return;
+
+                    let node = textNode;
+                    while (node = getNextNode(node, this)) {
+                        postValue += getNodeValue(node);
+                        if (postValue.trim()) return;
+                    }
+                }
+
+                let preValue = '';
+                preValue: {
+                    preValue = textNode.nodeValue.slice(0, offset);
+
+                    let node = textNode;
+                    while (node = getPrevNode(node, this)) {
+                        preValue = getNodeValue(node) + preValue;
+                    }
+                }
+
+                handlesuggestion: {
+                    keyUpIndex++;
+                    (asyncReference => {
+                        self.composer.call(this, preValue, result => {
+                            if (!result || asyncReference !== keyUpIndex) return;
+                            const textAfterCursor = textNode.nodeValue.slice(offset);
+                            const parentNode = textNode.parentNode;
+                            const referenceNode = textNode.nextSibling;
+
+                            textNode.nodeValue = textNode.nodeValue.slice(0, offset);
+                            parentNode.insertBefore(document.createTextNode(textAfterCursor), referenceNode);
+
+                            activeSuggestion = result;
+                            suggestionNode = createNode(`<span>${result}</span>`);
+                            suggestionNode.style.opacity = 0.7;
+                            suggestionNode.id = INLINE_SUGGESTION_ID;
+                            parentNode.insertBefore(suggestionNode, referenceNode);
+
+                            setSelection(range => {
+                                range.setStartBefore(suggestionNode);
+                                range.setEndBefore(suggestionNode);
+                            });
+                        });
+                    })(keyUpIndex);
+                }
+            };
         }
-      };
+
+        // initialize events on inputs
+        this.addInputs(...inputs);
     }
 
-    // initialize events on inputs
-    this.addInputs(...inputs);
-  }
+    addInputs(...args) {
+        const inputs = Array.prototype.concat.apply([], args.map(d => d[0] ? Array.prototype.slice.call(d, 0) : d));
 
-  addInputs(...args) {
-    const inputs = Array.prototype.concat.apply([], args.map(d => d[0] ? Array.prototype.slice.call(d, 0) : d));
+        inputs.forEach(input => {
+            // validate element
+           if (!input.isContentEditable) {
+                throw new Error('AutoCompose: Invalid input: only contenteditable elements are supported');
+            }
 
-    inputs.forEach(input => {
-      // validate element
-      if (input.tagName === 'TEXTAREA') {
-        data(input, 'isInput', true)
-      } else if (input.isContentEditable) {
-        data(input, 'isInput', false)
-      } else {
-        throw new Error('AutoCompose: Invalid input: only textarea and contenteditable elements are supported');
-      }
+            // init events
+            input.addEventListener('blur', this.onBlurHandler);
+            input.addEventListener('keyup', this.onKeyUpHandler);
+            input.addEventListener('mouseup', this.onKeyUpHandler);
+            input.addEventListener('keydown', this.onKeyDownHandler, true);
 
-      // init events
-      input.addEventListener('blur', this.onBlurHandler);
-      input.addEventListener('keyup', this.onKeyUpHandler);
-      input.addEventListener('mouseup', this.onKeyUpHandler);
-      input.addEventListener('keydown', this.onKeyDownHandler, true);
+            data(input, 'index', this.inputs.push(input) - 1);
+        });
+    }
 
-      data(input, 'index', this.inputs.push(input) - 1);
-    });
-  }
+    removeInputs(...args) {
+        const inputs = Array.prototype.concat.apply([], args.map(d => d[0] ? Array.prototype.slice.call(d, 0) : d));
 
-  removeInputs(...args) {
-    const inputs = Array.prototype.concat.apply([], args.map(d => d[0] ? Array.prototype.slice.call(d, 0) : d));
+        inputs.forEach(input => {
+            const index = data(input, 'index');
+            if (!isNaN(index)) {
+                this.inputs.splice(index, 1);
 
-    inputs.forEach(input => {
-      const index = data(input, 'index');
-      if (!isNaN(index)) {
-        this.inputs.splice(index, 1);
+                // destroy events
+                input.removeEventListener('blur', this.onBlurHandler);
+                input.removeEventListener('keyup', this.onKeyUpHandler);
+                input.removeEventListener('mouseup', this.onKeyUpHandler);
+                input.removeEventListener('keydown', this.onKeyDownHandler, true);
+            }
+        });
+    }
 
-        // destroy events
-        input.removeEventListener('blur', this.onBlurHandler);
-        input.removeEventListener('keyup', this.onKeyUpHandler);
-        input.removeEventListener('mouseup', this.onKeyUpHandler);
-        input.removeEventListener('keydown', this.onKeyDownHandler, true);
-      }
-    });
-  }
-
-  destroy() {
-    this.removeInputs(this.inputs);
-  }
+    destroy() {
+        this.removeInputs(this.inputs);
+    }
 }
 
 export default AutoCompose;

@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Auto Suggest</title>
+    <title>Auto Compose</title>
     <meta name="description" content="AutoCompose">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400" rel="stylesheet">
@@ -64,18 +64,26 @@
         <div contenteditable="true" id="contenteditable" class="form-control"></div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
-        crossorigin="anonymous"></script>
     <script src="./dist/AutoCompose.js"></script>
+    <script src="./dist/AutoComposeTextarea.js"></script>
     <script type="text/javascript">
-        const instance = new AutoCompose({
+        const instance1 = new AutoComposeTextarea({
             onChange: function (suggestion) {
                 console.log('"' + suggestion + '" has been inserted into #' + this.id);
             },
             composer: function (preValue, callback) {
                 callback('dhsfjs sf sd fsjf sd fksj ksj  fjsdf jsdk fjskdfj skd fjksdj fksj  jsfjsd ks jfkls jfks jksd jkd jskf jskdfj ksj dskj sj jkl jkjf vlkfjd sjj sdl jsf jslfj sklj fkslj fklsdj k jslkfj sklfj skj ksj fksj flks jfks jfj slkf jlfj sljf ksdjf sdj flsj lsjlkfj sl jflsjflskdfj s j'.slice(preValue.length));
             }
-        }, $('#textarea'), $('#contenteditable')[0]);
+        }, document.getElementById('textarea'));
+
+        const instance2 = new AutoCompose({
+            onChange: function (suggestion) {
+                console.log('"' + suggestion + '" has been inserted into #' + this.id);
+            },
+            composer: function (preValue, callback) {
+                callback('dhsfjs sf sd fsjf sd fksj ksj  fjsdf jsdk fjskdfj skd fjksdj fksj  jsfjsd ks jfkls jfks jksd jkd jskf jskdfj ksj dskj sj jkl jkjf vlkfjd sjj sdl jsf jslfj sklj fkslj fklsdj k jslkfj sklfj skj ksj fksj flks jfks jfj slkf jlfj sljf ksdjf sdj flsj lsjlkfj sl jflsjflskdfj s j'.slice(preValue.length));
+            }
+        }, document.getElementById('contenteditable'));
     </script>
 </body>
 
