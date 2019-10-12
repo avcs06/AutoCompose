@@ -167,6 +167,26 @@ var data = function data(element, key, value) {
     }
 };
 
+var getScrollbarWidth = function getScrollbarWidth() {
+    // Creating invisible container
+    var outer = document.createElement('div');
+    outer.style.visibility = 'hidden';
+    outer.style.overflow = 'scroll'; // forcing scrollbar to appear
+    outer.style.msOverflowStyle = 'scrollbar'; // needed for WinJS apps
+    document.body.appendChild(outer);
+
+    // Creating inner element and placing it in the container
+    var inner = document.createElement('div');
+    outer.appendChild(inner);
+
+    // Calculating difference between container's full width and the child width
+    var scrollbarWidth = outer.offsetWidth - inner.offsetWidth;
+
+    // Removing temporary elements from the DOM
+    outer.parentNode.removeChild(outer);
+    return scrollbarWidth;
+};
+
 // Invisible character
 var POSITIONER_CHARACTER = '\uFEFF';
 
@@ -176,14 +196,9 @@ var FONT_PROPERTIES = [
 
 'letterSpacing', 'wordSpacing', 'tabSize', 'MozTabSize'];
 
-var HOST_PROPERTIES = [].concat(FONT_PROPERTIES, ['direction', // RTL support
-'boxSizing', 'width', // on Chrome and IE, exclude the scrollbar, so the mirror div wraps exactly as the textarea does
+var HOST_PROPERTIES = [].concat(FONT_PROPERTIES, ['direction', 'boxSizing', 'borderRightWidth', 'borderLeftWidth', 'paddingRight', 'paddingLeft']);
 
-'borderRightWidth', 'borderLeftWidth', 'paddingRight', 'paddingLeft']);
-
-var CLONE_PROPERTIES = [].concat(toConsumableArray(HOST_PROPERTIES), ['overflowX', 'overflowY', // copy the scrollbar for IE
-
-'borderTopWidth', 'borderBottomWidth', 'borderStyle', 'paddingTop', 'paddingBottom', 'lineHeight']);
+var CLONE_PROPERTIES = [].concat(toConsumableArray(HOST_PROPERTIES), ['width', 'overflowX', 'overflowY', 'borderTopWidth', 'borderBottomWidth', 'borderStyle', 'paddingTop', 'paddingBottom', 'lineHeight']);
 
 var FILLER = ' &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;';
 
@@ -208,9 +223,13 @@ var createNode = function createNode(html) {
     return div.firstChild;
 };
 
+var scrollBarWidth = void 0;
+
 var OverlaySuggestion = function () {
     function OverlaySuggestion() {
         classCallCheck(this, OverlaySuggestion);
+
+        if (scrollBarWidth === undefined) scrollBarWidth = getScrollbarWidth();
 
         this.isEmpty = true;
         this.isActive = false;
@@ -254,10 +273,11 @@ var OverlaySuggestion = function () {
                 this.host.style.height = parseFloat(elementStyles.height) - position.top + elementPosition.top + 'px';
                 this.host.style.color = elementStyles.color;
 
-                if (element.scrollHeight > parseInt(elementStyles.height)) this.host.style.overflowY = 'scroll';else this.host.style.overflowY = 'hidden';
+                var overlayWidth = parseFloat(elementStyles.width) - scrollBarWidth;
+                this.host.style.width = overlayWidth + 'px';
 
                 var leftWidth = position.left - elementPosition.left - parseFloat(elementStyles.paddingLeft || 0);
-                var rightWidth = parseFloat(elementStyles.width) - position.left + elementPosition.left - parseFloat(elementStyles.paddingRight || 0);
+                var rightWidth = overlayWidth - position.left + elementPosition.left - parseFloat(elementStyles.paddingRight || 0);
                 var firstLineWidth = 0;
                 if (elementStyles.direction === 'ltr') {
                     this.offset.style.float = 'left';
@@ -408,6 +428,7 @@ function getCaretPosition(element) {
 var setValue = function setValue(_ref) {
     var element = _ref.element,
         suggestion = _ref.suggestion,
+        fullSuggestion = _ref.fullSuggestion,
         onChange = _ref.onChange;
 
     var _getCursorPosition3 = getCursorPosition(element),
@@ -422,7 +443,7 @@ var setValue = function setValue(_ref) {
 
     var cursorPosition = value.length;
     element.setSelectionRange(cursorPosition, cursorPosition);
-    onChange(suggestion);
+    onChange({ suggestion: fullSuggestion, acceptedSuggestion: suggestion });
 };
 
 var AutoComposeTextarea = function () {
@@ -438,6 +459,7 @@ var AutoComposeTextarea = function () {
         this.inputs = [];
         this.suggestion = new OverlaySuggestion();
         this.onChange = options.onChange || Function.prototype;
+        this.onReject = options.onReject || Function.prototype;
 
         ensure('AutoCompose Textarea', options, 'composer');
         ensureType('AutoCompose Textarea', options, 'composer', 'function');
@@ -454,17 +476,18 @@ var AutoComposeTextarea = function () {
             this.onKeyDownHandler = function (e) {
                 if (self.suggestion.isActive) {
                     if (e.keyCode === 9 || e.keyCode === 39 || e.keyCode === 40) {
+                        var fullSuggestion = self.suggestion.getValue();
                         setValue({
                             element: this,
-                            suggestion: self.suggestion.getValue(),
+                            fullSuggestion: fullSuggestion,
+                            suggestion: fullSuggestion,
                             onChange: self.onChange.bind(this)
                         });
 
+                        self.suggestion.hide();
                         handledInKeyDown = true;
                         e.preventDefault();
                     }
-
-                    self.suggestion.hide();
                 }
             };
 
@@ -477,7 +500,10 @@ var AutoComposeTextarea = function () {
                     return;
                 }
 
-                self.suggestion.hide();
+                if (self.suggestion.isActive) {
+                    self.suggestion.hide();
+                    self.onReject({ suggestion: self.suggestion.getValue() });
+                }
 
                 var _getCursorPosition5 = getCursorPosition(this),
                     _getCursorPosition6 = slicedToArray(_getCursorPosition5, 2),
@@ -502,6 +528,7 @@ var AutoComposeTextarea = function () {
                                 setValue({
                                     element: _this,
                                     suggestion: suggestion,
+                                    fullSuggestion: result,
                                     onChange: self.onChange.bind(_this)
                                 });
                             });

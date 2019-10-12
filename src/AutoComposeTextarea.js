@@ -44,7 +44,7 @@ function getCaretPosition(element) {
     return caretPosition;
 }
 
-const setValue = ({ element, suggestion, onChange }) => {
+const setValue = ({ element, suggestion, fullSuggestion, onChange }) => {
     const [startPosition] = getCursorPosition(element);
     const originalValue = element.value;
     const value = originalValue.slice(0, startPosition) + suggestion;
@@ -54,7 +54,7 @@ const setValue = ({ element, suggestion, onChange }) => {
 
     const cursorPosition = value.length;
     element.setSelectionRange(cursorPosition, cursorPosition);
-    onChange(suggestion);
+    onChange({ suggestion: fullSuggestion, acceptedSuggestion: suggestion });
 };
 
 class AutoComposeTextarea {
@@ -69,6 +69,7 @@ class AutoComposeTextarea {
         this.inputs = [];
         this.suggestion = new OverlaySuggestion();
         this.onChange = options.onChange || Function.prototype;
+        this.onReject = options.onReject || Function.prototype;
 
         ensure('AutoCompose Textarea', options, 'composer');
         ensureType('AutoCompose Textarea', options, 'composer', 'function');
@@ -85,17 +86,18 @@ class AutoComposeTextarea {
             this.onKeyDownHandler = function (e) {
                 if (self.suggestion.isActive) {
                     if (e.keyCode === 9 || e.keyCode === 39 || e.keyCode === 40) {
+                        const fullSuggestion = self.suggestion.getValue();
                         setValue({
                             element: this,
-                            suggestion: self.suggestion.getValue(),
+                            fullSuggestion,
+                            suggestion: fullSuggestion,
                             onChange: self.onChange.bind(this)
                         });
 
+                        self.suggestion.hide();
                         handledInKeyDown = true;
                         e.preventDefault();
                     }
-
-                    self.suggestion.hide();
                 }
             };
 
@@ -106,7 +108,11 @@ class AutoComposeTextarea {
                     return;
                 }
 
-                self.suggestion.hide();
+                if (self.suggestion.isActive) {
+                    self.suggestion.hide();
+                    self.onReject({ suggestion: self.suggestion.getValue() });
+                }
+
                 const [startPosition, endPosition] = getCursorPosition(this);
                 if (startPosition !== endPosition) return;
 
@@ -126,6 +132,7 @@ class AutoComposeTextarea {
                                 setValue({
                                     element: this,
                                     suggestion: suggestion,
+                                    fullSuggestion: result,
                                     onChange: self.onChange.bind(this)
                                 });
                             });

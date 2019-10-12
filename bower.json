@@ -1,6 +1,6 @@
 {
   "name": "avcs-autocompose",
-  "description": "A JavaScript plugin to implement gmail like smart compose",
+  "description": "A JavaScript plugin to provide UI support for Gmail like smart compose in textarea and contenteditable.",
   "main": [
     "dist/AutoCompose.js",
     "dist/AutoComposeTextarea.js"

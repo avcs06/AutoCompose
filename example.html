@@ -68,8 +68,11 @@
     <script src="./dist/AutoComposeTextarea.js"></script>
     <script type="text/javascript">
         const instance1 = new AutoComposeTextarea({
-            onChange: function (suggestion) {
-                console.log('"' + suggestion + '" has been inserted into #' + this.id);
+            onChange: function ({ acceptedSuggestion }) {
+                console.log('"' + acceptedSuggestion + '" has been inserted into #' + this.id);
+            },
+            onReject: function ({ suggestion }) {
+                console.log('"' + suggestion + '" has been rejected');
             },
             composer: function (preValue, callback) {
                 callback('dhsfjs sf sd fsjf sd fksj ksj  fjsdf jsdk fjskdfj skd fjksdj fksj  jsfjsd ks jfkls jfks jksd jkd jskf jskdfj ksj dskj sj jkl jkjf vlkfjd sjj sdl jsf jslfj sklj fkslj fklsdj k jslkfj sklfj skj ksj fksj flks jfks jfj slkf jlfj sljf ksdjf sdj flsj lsjlkfj sl jflsjflskdfj s j'.slice(preValue.length));
@@ -77,8 +80,11 @@
         }, document.getElementById('textarea'));
 
         const instance2 = new AutoCompose({
-            onChange: function (suggestion) {
-                console.log('"' + suggestion + '" has been inserted into #' + this.id);
+            onChange: function ({ acceptedSuggestion }) {
+                console.log('"' + acceptedSuggestion + '" has been inserted into #' + this.id);
+            },
+            onReject: function ({ suggestion }) {
+                console.log('"' + suggestion + '" has been rejected');
             },
             composer: function (preValue, callback) {
                 callback('dhsfjs sf sd fsjf sd fksj ksj  fjsdf jsdk fjskdfj skd fjksdj fksj  jsfjsd ks jfkls jfks jksd jkd jskf jskdfj ksj dskj sj jkl jkjf vlkfjd sjj sdl jsf jslfj sklj fkslj fklsdj k jslkfj sklfj skj ksj fksj flks jfks jfj slkf jlfj sljf ksdjf sdj flsj lsjlkfj sl jflsjflskdfj s j'.slice(preValue.length));

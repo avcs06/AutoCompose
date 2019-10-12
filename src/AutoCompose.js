@@ -27,13 +27,16 @@ class AutoCompose {
 
         events: {
             const self = this;
-            let handledInKeyDown = false, suggestionNode = null, activeSuggestion = null;
+            let handledInKeyDown = false;
+            let activeElement = null;
+            let suggestionNode = null;
+            let activeSuggestion = null;
 
             const clearSuggestion = normalize => {
                 const parentNode = suggestionNode.parentNode;
                 parentNode.removeChild(suggestionNode);
                 normalize && parentNode.normalize();
-                suggestionNode = activeSuggestion = null;
+                suggestionNode = activeSuggestion = activeElement = null;
             };
 
             const acceptSuggestion = ignoreCursor => {
@@ -41,26 +44,26 @@ class AutoCompose {
                 suggestionNode.parentNode.insertBefore(suggestionNode.firstChild, suggestionNode);
                 const insertedNode = suggestionNode.previousSibling;
 
+                this.onChange.call(activeElement, {
+                    suggestion: activeSuggestion,
+                    acceptedSuggestion: suggestion
+                });
+
                 clearSuggestion();
                 !ignoreCursor && setSelection(range => {
                     range.setStartAfter(insertedNode);
                     range.setEndAfter(insertedNode);
                 });
-
-                this.onChange({
-                    suggestion: activeSuggestion,
-                    acceptedSuggestion: suggestion
-                });
             };
 
             const rejectSuggestion = () => {
+                this.onReject.call(activeElement, { suggestion: activeSuggestion });
                 clearSuggestion();
-                this.onReject({ suggestion: activeSuggestion });
             };
 
             const isSuggestionTextNode = node => node.parentNode === suggestionNode;
             const isAfterSuggestionNode = node => {
-                while ((node = getPrevNode(node)) && isSuggestionTextNode(node));
+                while ((node = getPrevNode(node, activeElement)) && !isSuggestionTextNode(node));
                 return Boolean(node);
             };
 
@@ -71,8 +74,6 @@ class AutoCompose {
                         acceptSuggestion();
                         handledInKeyDown = true;
                         e.preventDefault();
-                    } else {
-                        rejectSuggestion();
                     }
                 }
             };
@@ -85,7 +86,7 @@ class AutoCompose {
                 }
 
                 let { node: textNode, offset } = getSelectedTextNodes();
-                if (!textNode) return;
+                if (!textNode) return suggestionNode && rejectSuggestion();
 
                 const isSuggestionNode = isSuggestionTextNode(textNode);
                 if (e.type === 'mouseup' && suggestionNode) {
@@ -99,16 +100,17 @@ class AutoCompose {
 
                 if (isSuggestionNode) {
                     try {
-                        textNode = getPrevNode(suggestionNode);
+                        textNode = getPrevNode(suggestionNode, this);
                         offset = textNode.nodeValue.length;
                     } catch(e) {
-                        textNode = getNextNode(suggestionNode);
+                        textNode = getNextNode(suggestionNode, this);
                         offset = 0;
                     }
                 }
-                if (textNode.nodeType !== textNode.TEXT_NODE) return;
 
                 suggestionNode && rejectSuggestion();
+                if (textNode.nodeType !== textNode.TEXT_NODE) return;
+
                 postValue: {
                     let postValue = textNode.nodeValue.slice(offset);
                     if (postValue.trim()) return;
@@ -135,6 +137,8 @@ class AutoCompose {
                     (asyncReference => {
                         self.composer.call(this, preValue, result => {
                             if (!result || asyncReference !== keyUpIndex) return;
+                            activeElement = this;
+
                             const textAfterCursor = textNode.nodeValue.slice(offset);
                             const parentNode = textNode.parentNode;
                             const referenceNode = textNode.nextSibling;

@@ -25,9 +25,8 @@ export const FONT_PROPERTIES = [
 
 export const HOST_PROPERTIES = [
     ...FONT_PROPERTIES,
-    'direction',  // RTL support
+    'direction',
     'boxSizing',
-    'width',  // on Chrome and IE, exclude the scrollbar, so the mirror div wraps exactly as the textarea does
 
     'borderRightWidth',
     'borderLeftWidth',
@@ -38,8 +37,10 @@ export const HOST_PROPERTIES = [
 
 export const CLONE_PROPERTIES = [
     ...HOST_PROPERTIES,
+    'width',
+
     'overflowX',
-    'overflowY',  // copy the scrollbar for IE
+    'overflowY',
 
     'borderTopWidth',
     'borderBottomWidth',

@@ -1,8 +1,14 @@
+import { getScrollbarWidth } from './utils';
 import { createNode, getGlobalOffset } from './node-utils';
 import { POSITIONER_CHARACTER, HOST_PROPERTIES, FONT_PROPERTIES, FILLER } from './constants';
 
+let scrollBarWidth;
+
 class OverlaySuggestion {
     constructor() {
+        if (scrollBarWidth === undefined)
+            scrollBarWidth = getScrollbarWidth();
+
         this.isEmpty = true;
         this.isActive = false;
         this.suggestion = '';
@@ -41,14 +47,12 @@ class OverlaySuggestion {
             this.host.style.height = `${parseFloat(elementStyles.height) - position.top + elementPosition.top}px`;
             this.host.style.color = elementStyles.color;
 
-            if (element.scrollHeight > parseInt(elementStyles.height))
-                this.host.style.overflowY = 'scroll';
-            else
-                this.host.style.overflowY = 'hidden';
+            const overlayWidth = parseFloat(elementStyles.width) - scrollBarWidth;
+            this.host.style.width = `${overlayWidth}px`;
 
             const leftWidth = position.left - elementPosition.left -
                 parseFloat(elementStyles.paddingLeft || 0);
-            const rightWidth = parseFloat(elementStyles.width) - position.left + elementPosition.left -
+            const rightWidth = overlayWidth - position.left + elementPosition.left -
                 parseFloat(elementStyles.paddingRight || 0);
             let firstLineWidth = 0;
             if (elementStyles.direction === 'ltr') {

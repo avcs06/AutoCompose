@@ -1,7 +1,7 @@
 {
   "name": "@avcs/autocompose",
-  "version": "1.0.0",
-  "description": "A JavaScript plugin to implement gmail like smart compose",
+  "version": "1.0.0-beta",
+  "description": "A JavaScript plugin to provide UI support for Gmail like smart compose in textarea and contenteditable.",
   "main": "lib/AutoCompose.js",
   "repository": "git@github.com:avcs06/AutoCompose.git",
   "scripts": {

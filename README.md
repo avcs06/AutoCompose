@@ -1,34 +1,25 @@
 # AutoCompose
-A JavaScript plugin to implement IDE like autocompletion in input, textarea or contenteditable fields.
+A JavaScript plugin to provide UI support for Gmail like smart compose in textarea and contenteditable.
 
 ### [Demo](https://avcs.pro/autocompose) | [Documentation](Documentation.md)
 
 # Features
 ### General
-1. Supports input, textarea and contenteditable fields
+1. Supports textarea and contenteditable fields
 2. No external dependencies like jquery or bootstrap
 3. Can add and remove inputs dynamically.
+4. **DOES NOT** provide any suggestion algorithms or database, you have to provide the `composer`, a method which takes in current value and returns the suggestion.
 
-### Trigger
-1. Can use any character or any sequence of characters as a trigger.
-2. If no trigger is passed will use space as a trigger.
-3. Trigger character will also be removed when inserting a suggestion except for the above case.
+### Textarea
+1. Provides a completely different Component `AutoComposeTextarea` to support textarea.
+2. Uses overlay to show the suggestion.
 
-### Suggestions
-1. Can supply an array of strings as [Suggestions](Documentation.md#suggestion-as-string).
-2. Can supply an array of objects as [Suggestions](Documentation.md#suggestion-as-object) to get fine control over the behavior of suggestions.
-3. Can pass HTML inside `Suggestion.show` if you want to design how the suggestion is shown in the dropdown.
-4. Can pass HTML in `Suggestion.insertText` if you want to show HTML as is in the contenteditable fields.
-5. Can pass HTML in `Suggestion.insertHTML` if you want to insert HTML as evaluated DOM elements in contenteditable fields.
-6. Can pass a `Function` in [SuggestionList.values](Documentation.md#suggestionlist) which will receive the keyword and generates [Suggestions](Documentation.md#suggestion) dynamically.
-    - Supports `Async` allowing you to fetch suggestions over API calls, shows a loader until the callback is executed.
-    - By default the plugin matches all suggestions that starts with keyword, if you want more control over matching, like fuzzy search, you can use `Function` to plug the behavior into the plugin.
+### Contenteditable
+1. Inserts the suggestion into HTML directly.
+2. Current text style will be applied to the suggestion too.
 
-### Dropdown
-1. Current scroll states are considered when calculating the position of dropdown.
-2. Considers `line-height` of the trigger character (height in case of input) to determine the position of dropdown.
-3. Can use `Up` and `Down` arrows to navigate between multiple suggestions when dropdown is active
-4. Can use `Enter` or `Tab` key to insert the current selected Suggestion in the dropdown
-5. Can use `Esc` key to close the dropdown.
-6. Dropdown will be shown on keydown or mousedown inside the input field, when the value before the current selection ends with "trigger + keyword" (without spaces) and the immediate character after the selection does not belong to `a-zA-Z0-9_` (Anything inside the selection will not be considered inside keyword)
-7. In case of contenteditable, if the selection spans over multiple nodes with different styles, the suggestion will be inserted into the first node, hence follows the style of the first node.
+### Suggestion
+1. User can accept partial suggestion, by placing the cursor in the middle of the suggestion.
+2. User can accept the full suggestion by placing the cursor at the end of suggestion or using keys `Tab`, `Left arrow` or `Down arrow`.
+3. OnChange event provides `acceptedSuggestion`, which gives the partial suggestion if user accepts only partial suggestion.
+4. OnReject event will be triggered if the shown suggestion is not accepted by user.

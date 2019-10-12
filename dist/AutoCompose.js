@@ -103,14 +103,9 @@ var FONT_PROPERTIES = [
 
 'letterSpacing', 'wordSpacing', 'tabSize', 'MozTabSize'];
 
-var HOST_PROPERTIES = [].concat(FONT_PROPERTIES, ['direction', // RTL support
-'boxSizing', 'width', // on Chrome and IE, exclude the scrollbar, so the mirror div wraps exactly as the textarea does
+var HOST_PROPERTIES = [].concat(FONT_PROPERTIES, ['direction', 'boxSizing', 'borderRightWidth', 'borderLeftWidth', 'paddingRight', 'paddingLeft']);
 
-'borderRightWidth', 'borderLeftWidth', 'paddingRight', 'paddingLeft']);
-
-var CLONE_PROPERTIES = [].concat(toConsumableArray(HOST_PROPERTIES), ['overflowX', 'overflowY', // copy the scrollbar for IE
-
-'borderTopWidth', 'borderBottomWidth', 'borderStyle', 'paddingTop', 'paddingBottom', 'lineHeight']);
+var CLONE_PROPERTIES = [].concat(toConsumableArray(HOST_PROPERTIES), ['width', 'overflowX', 'overflowY', 'borderTopWidth', 'borderBottomWidth', 'borderStyle', 'paddingTop', 'paddingBottom', 'lineHeight']);
 
 
 
@@ -251,15 +246,16 @@ var AutoCompose = function () {
 
         events: {
             var self = this;
-            var handledInKeyDown = false,
-                suggestionNode = null,
-                activeSuggestion = null;
+            var handledInKeyDown = false;
+            var activeElement = null;
+            var suggestionNode = null;
+            var activeSuggestion = null;
 
             var clearSuggestion = function clearSuggestion(normalize) {
                 var parentNode = suggestionNode.parentNode;
                 parentNode.removeChild(suggestionNode);
                 normalize && parentNode.normalize();
-                suggestionNode = activeSuggestion = null;
+                suggestionNode = activeSuggestion = activeElement = null;
             };
 
             var acceptSuggestion = function acceptSuggestion(ignoreCursor) {
@@ -267,28 +263,28 @@ var AutoCompose = function () {
                 suggestionNode.parentNode.insertBefore(suggestionNode.firstChild, suggestionNode);
                 var insertedNode = suggestionNode.previousSibling;
 
+                _this.onChange.call(activeElement, {
+                    suggestion: activeSuggestion,
+                    acceptedSuggestion: suggestion
+                });
+
                 clearSuggestion();
                 !ignoreCursor && setSelection(function (range) {
                     range.setStartAfter(insertedNode);
                     range.setEndAfter(insertedNode);
                 });
-
-                _this.onChange({
-                    suggestion: activeSuggestion,
-                    acceptedSuggestion: suggestion
-                });
             };
 
             var rejectSuggestion = function rejectSuggestion() {
+                _this.onReject.call(activeElement, { suggestion: activeSuggestion });
                 clearSuggestion();
-                _this.onReject({ suggestion: activeSuggestion });
             };
 
             var isSuggestionTextNode = function isSuggestionTextNode(node) {
                 return node.parentNode === suggestionNode;
             };
             var isAfterSuggestionNode = function isAfterSuggestionNode(node) {
-                while ((node = getPrevNode(node)) && isSuggestionTextNode(node)) {}
+                while ((node = getPrevNode(node, activeElement)) && !isSuggestionTextNode(node)) {}
                 return Boolean(node);
             };
 
@@ -301,8 +297,6 @@ var AutoCompose = function () {
                         acceptSuggestion();
                         handledInKeyDown = true;
                         e.preventDefault();
-                    } else {
-                        rejectSuggestion();
                     }
                 }
             };
@@ -320,7 +314,7 @@ var AutoCompose = function () {
                     textNode = _getSelectedTextNodes.node,
                     offset = _getSelectedTextNodes.offset;
 
-                if (!textNode) return;
+                if (!textNode) return suggestionNode && rejectSuggestion();
 
                 var isSuggestionNode = isSuggestionTextNode(textNode);
                 if (e.type === 'mouseup' && suggestionNode) {
@@ -334,16 +328,17 @@ var AutoCompose = function () {
 
                 if (isSuggestionNode) {
                     try {
-                        textNode = getPrevNode(suggestionNode);
+                        textNode = getPrevNode(suggestionNode, this);
                         offset = textNode.nodeValue.length;
                     } catch (e) {
-                        textNode = getNextNode(suggestionNode);
+                        textNode = getNextNode(suggestionNode, this);
                         offset = 0;
                     }
                 }
-                if (textNode.nodeType !== textNode.TEXT_NODE) return;
 
                 suggestionNode && rejectSuggestion();
+                if (textNode.nodeType !== textNode.TEXT_NODE) return;
+
                 postValue: {
                     var postValue = textNode.nodeValue.slice(offset);
                     if (postValue.trim()) return;
@@ -370,6 +365,8 @@ var AutoCompose = function () {
                     (function (asyncReference) {
                         self.composer.call(_this2, preValue, function (result) {
                             if (!result || asyncReference !== keyUpIndex) return;
+                            activeElement = _this2;
+
                             var textAfterCursor = textNode.nodeValue.slice(offset);
                             var parentNode = textNode.parentNode;
                             var referenceNode = textNode.nextSibling;
