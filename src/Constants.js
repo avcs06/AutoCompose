@@ -20,7 +20,11 @@ export const FONT_PROPERTIES = [
     'wordSpacing',
 
     'tabSize',
-    'MozTabSize'
+    'MozTabSize',
+
+    'whiteSpace',
+    'wordWrap',
+    'wordBreak'
 ];
 
 export const HOST_PROPERTIES = [

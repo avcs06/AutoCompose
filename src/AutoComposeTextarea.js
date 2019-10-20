@@ -32,10 +32,7 @@ function getCaretPosition(element) {
 
     clone.appendChild(document.createTextNode(element.value.slice(0, cursorPosition)));
     clone.appendChild(positioner);
-
     clone.style.maxWidth = '100%';
-    clone.style.whiteSpace = 'pre-wrap';
-    clone.style.wordWrap = 'break-word';
 
     const caretPosition = getGlobalOffset(positioner);
     caretPosition.top -= element.scrollTop;
