@@ -194,7 +194,7 @@ var FONT_PROPERTIES = [
 // https://developer.mozilla.org/en-US/docs/Web/CSS/font
 'fontStyle', 'fontVariant', 'fontWeight', 'fontStretch', 'fontSize', 'fontSizeAdjust', 'fontFamily', 'textAlign', 'textTransform', 'textIndent', 'textDecoration', // might not make a difference, but better be safe
 
-'letterSpacing', 'wordSpacing', 'tabSize', 'MozTabSize'];
+'letterSpacing', 'wordSpacing', 'tabSize', 'MozTabSize', 'whiteSpace', 'wordWrap', 'wordBreak'];
 
 var HOST_PROPERTIES = [].concat(FONT_PROPERTIES, ['direction', 'boxSizing', 'borderRightWidth', 'borderLeftWidth', 'paddingRight', 'paddingLeft']);
 
@@ -415,10 +415,7 @@ function getCaretPosition(element) {
 
     clone.appendChild(document.createTextNode(element.value.slice(0, cursorPosition)));
     clone.appendChild(positioner);
-
     clone.style.maxWidth = '100%';
-    clone.style.whiteSpace = 'pre-wrap';
-    clone.style.wordWrap = 'break-word';
 
     var caretPosition = getGlobalOffset(positioner);
     caretPosition.top -= element.scrollTop;

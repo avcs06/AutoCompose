@@ -101,7 +101,7 @@ var FONT_PROPERTIES = [
 // https://developer.mozilla.org/en-US/docs/Web/CSS/font
 'fontStyle', 'fontVariant', 'fontWeight', 'fontStretch', 'fontSize', 'fontSizeAdjust', 'fontFamily', 'textAlign', 'textTransform', 'textIndent', 'textDecoration', // might not make a difference, but better be safe
 
-'letterSpacing', 'wordSpacing', 'tabSize', 'MozTabSize'];
+'letterSpacing', 'wordSpacing', 'tabSize', 'MozTabSize', 'whiteSpace', 'wordWrap', 'wordBreak'];
 
 var HOST_PROPERTIES = [].concat(FONT_PROPERTIES, ['direction', 'boxSizing', 'borderRightWidth', 'borderLeftWidth', 'paddingRight', 'paddingLeft']);
 
