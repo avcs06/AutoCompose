@@ -236,6 +236,8 @@ var OverlaySuggestion = function () {
         this.suggestion = '';
 
         this.host = document.createElement('div');
+        this.host.className = 'autocompose-overlay-suggestion';
+        this.host.style.zIndex = 9999;
         this.host.style.cursor = 'text';
         this.host.style.position = 'absolute';
         this.host.style.borderColor = 'transparent';
