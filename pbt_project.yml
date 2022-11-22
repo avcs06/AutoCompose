@@ -1,0 +1,17 @@
+name: TestGithub1
+description: ''
+version: 0.0.1-SNAPSHOT
+author: ayush+11@simpledatalabs.com
+language: python
+buildSystem: wheel
+pipelines: {}
+datasets: {}
+templates: {}
+jobs: {}
+libraries: []
+subgraphs: {}
+sqlModels: {}
+sqlPipeline: null
+dependencies: '[]'
+projectDependencies: {}
+pipelineConfigurations: {}
