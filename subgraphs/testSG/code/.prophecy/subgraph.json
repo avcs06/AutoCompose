@@ -1,0 +1,31 @@
+{
+  "id" : "GQXsnxSOmXKt-dpTPSVcR",
+  "component" : "Subgraph",
+  "metadata" : {
+    "label" : "",
+    "slug" : "",
+    "x" : 0,
+    "y" : 0,
+    "phase" : 0,
+    "cache" : false,
+    "detailedStats" : false,
+    "isImported" : false
+  },
+  "ports" : {
+    "inputs" : [ {
+      "id" : "rnX1AZJMftPg56LUphoCq",
+      "slug" : "in0"
+    } ],
+    "outputs" : [ {
+      "id" : "u7413vrhDNRW8JHnPGhQ-",
+      "slug" : "out0"
+    } ],
+    "selectedInputFields" : [ ],
+    "isCustomOutputSchema" : false
+  },
+  "properties" : {
+    "packageName" : "testSG"
+  },
+  "connections" : [ ],
+  "processes" : { }
+}

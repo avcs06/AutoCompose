@@ -1,0 +1,181 @@
+{
+  "metainfo" : {
+    "type" : "Databricks",
+    "fabricId" : "210",
+    "jobId" : "jobs/customer_order_job",
+    "name" : "customer_order_job",
+    "schedule" : "0 0 0 * * ? *",
+    "enabled" : false,
+    "defaultClusterSize" : "Small",
+    "alerting" : {
+      "emails" : "kajari@prophecy.io",
+      "onStart" : true,
+      "onSuccess" : false,
+      "onFailure" : false
+    },
+    "processDefaultSettings" : {
+      "type" : "Inherited",
+      "retries" : 0,
+      "alerting" : {
+        "emails" : "",
+        "onStart" : false,
+        "onSuccess" : false,
+        "onFailure" : false
+      }
+    },
+    "availableFabrics" : [ {
+      "id" : "210",
+      "name" : "dev",
+      "clusterSizes" : {
+        "default" : "Small",
+        "availableClusterSizes" : [ "Small" ]
+      }
+    } ]
+  },
+  "processes" : {
+    "CGoKbAX89EwDwvF6pM9Y2" : {
+      "id" : "CGoKbAX89EwDwvF6pM9Y2",
+      "component" : "Pipeline",
+      "metadata" : {
+        "label" : "Pipeline_0",
+        "slug" : "Pipeline_0",
+        "x" : 100,
+        "y" : 100
+      },
+      "ports" : {
+        "inputs" : [ {
+          "id" : "in"
+        } ],
+        "outputs" : [ {
+          "id" : "out"
+        } ]
+      },
+      "settings" : {
+        "type" : "Inherited",
+        "alerting" : {
+          "emails" : "",
+          "onStart" : false,
+          "onSuccess" : false,
+          "onFailure" : false
+        }
+      },
+      "properties" : {
+        "pipelineId" : "pipelines/customers_orders",
+        "configurations" : {
+          "schema" : [ {
+            "name" : "test1",
+            "optional" : false,
+            "kind" : {
+              "type" : "boolean",
+              "value" : "true"
+            }
+          }, {
+            "name" : "test2",
+            "optional" : false,
+            "kind" : {
+              "type" : "double",
+              "value" : "12312"
+            }
+          }, {
+            "name" : "test3",
+            "optional" : false,
+            "kind" : {
+              "type" : "string",
+              "value" : "sdfsdfsd"
+            }
+          }, {
+            "name" : "test4",
+            "optional" : false,
+            "kind" : {
+              "type" : "string",
+              "value" : "t4"
+            }
+          }, {
+            "name" : "t5",
+            "optional" : false,
+            "kind" : {
+              "type" : "string",
+              "value" : "t5"
+            }
+          } ],
+          "instances" : [ "default", "k2", "kajari" ],
+          "overrides" : { },
+          "selectedInstance" : "default"
+        }
+      }
+    },
+    "2Mf0KUzE4Gav8UKjGaIbl$$coZ7RFLTXhRDkQMAbSycT" : {
+      "id" : "2Mf0KUzE4Gav8UKjGaIbl$$coZ7RFLTXhRDkQMAbSycT",
+      "component" : "Pipeline",
+      "metadata" : {
+        "label" : "join_agg_sort_1",
+        "slug" : "join_agg_sort",
+        "x" : -360.20001220703125,
+        "y" : -185.39999389648438
+      },
+      "ports" : {
+        "inputs" : [ {
+          "id" : "9Lf2l-g_6gRCsSGW3w3mC$$oKoFcCnj360iC04FIloxp"
+        } ],
+        "outputs" : [ {
+          "id" : "00QJY6IQFhhVGeiHZ27Ut$$A1J7II5VtsCXIoVCqOnYB"
+        } ]
+      },
+      "settings" : {
+        "type" : "Inherited",
+        "alerting" : {
+          "emails" : "",
+          "onStart" : false,
+          "onSuccess" : false,
+          "onFailure" : false
+        }
+      },
+      "properties" : {
+        "pipelineId" : "pipelines/join_agg_sort",
+        "configurations" : {
+          "schema" : [ ],
+          "instances" : [ "default" ],
+          "overrides" : { },
+          "selectedInstance" : "default"
+        }
+      }
+    },
+    "HMb7tVwraLgigpV7Vw9FE$$9fOJL0tZXJLuhtAgPV6Bn" : {
+      "id" : "HMb7tVwraLgigpV7Vw9FE$$9fOJL0tZXJLuhtAgPV6Bn",
+      "component" : "Pipeline",
+      "metadata" : {
+        "label" : "join_agg_sort_2",
+        "slug" : "join_agg_sort",
+        "x" : -220.1999969482422,
+        "y" : -185.39999389648438
+      },
+      "ports" : {
+        "inputs" : [ {
+          "id" : "WhN5XSYUzwPoh-VC0RDME$$mxbNh2hOuZCqaQIv1eUN1"
+        } ],
+        "outputs" : [ {
+          "id" : "-aef6-k2-NUGg5DlkH-_c$$BIsgo9fQreEoz0beWenKJ"
+        } ]
+      },
+      "settings" : {
+        "type" : "Inherited",
+        "alerting" : {
+          "emails" : "",
+          "onStart" : false,
+          "onSuccess" : false,
+          "onFailure" : false
+        }
+      },
+      "properties" : {
+        "pipelineId" : "pipelines/join_agg_sort",
+        "configurations" : {
+          "schema" : [ ],
+          "instances" : [ "default" ],
+          "overrides" : { },
+          "selectedInstance" : "default"
+        }
+      }
+    }
+  },
+  "connections" : [ ]
+}

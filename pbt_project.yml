@@ -1,17 +1,255 @@
-name: TestGithub1
+name: HelloWorld
 description: ''
-version: 0.0.1-SNAPSHOT
-author: ayush+11@simpledatalabs.com
-language: python
-buildSystem: wheel
-pipelines: {}
-datasets: {}
+version: 1.1.3
+author: ''
+language: scala
+buildSystem: maven
+pipelines:
+  pipelines/farmers-markets-irs:
+    name: farmers-markets-irs
+    description: Exploration of Farmer's Market Locations By US Zip Code
+    author: ayush+11@simpledatalabs.com
+    mode: batch
+    language: scala
+    createdAt: '2022-09-12 05:34:56'
+    datasets:
+      inputs:
+      - 612/datasets/irs-zipcode-data
+      - 612/datasets/farmers-markets
+      outputs:
+      - 612/datasets/farmers_market_tax_report
+    dependencies: {}
+  pipelines/report_top_customers:
+    name: report_top_customers
+    description: Prepare a report based on customers' spending
+    author: ayush+11@simpledatalabs.com
+    mode: batch
+    language: scala
+    createdAt: '2022-09-12 05:34:55'
+    datasets:
+      inputs:
+      - 612/datasets/customers_orders
+      - 39/datasets/orders
+      outputs:
+      - 612/datasets/report
+    dependencies: {}
+  pipelines/customers_orders:
+    name: customers_orders
+    description: Aggregates total spending's for each customer
+    author: ayush+11@simpledatalabs.com
+    mode: batch
+    language: scala
+    createdAt: '2022-09-12 05:34:55'
+    datasets:
+      inputs:
+      - 612/datasets/orders
+      - 612/datasets/customers
+      - http://gitserver:3000/QdzhlGvR_team_25/QdzhlGvR_project_39.git/@HelloWorld1/1000/39/datasets/orders
+      - 39/datasets/orders
+      outputs:
+      - 612/datasets/customers_orders
+    dependencies: {}
+  pipelines/join_agg_sort:
+    name: join_agg_sort
+    description: Show an example of joining two datasets (customers and orders), aggregating
+      (sales by customer), sorting (by totals)
+    author: ayush+11@simpledatalabs.com
+    mode: batch
+    language: scala
+    createdAt: '2022-09-12 05:34:56'
+    datasets:
+      inputs:
+      - 612/datasets/orders
+      - 612/datasets/customers
+      outputs:
+      - 612/datasets/customer_totals
+    dependencies: {}
+datasets:
+  datasets/orders:
+    name: orders
+    description: All the orders placed by the customers
+    author: ayush+11@simpledatalabs.com
+    createdAt: '2022-09-12 05:34:51'
+    physicalDatasets:
+      dev:
+        fabricId: 210
+        datasetType: File
+        description: ''
+        author: ayush+11@simpledatalabs.com
+        createdAt: '2022-09-12 05:34:51'
+  datasets/irs-zipcode-data:
+    name: irs-zipcode-data
+    description: Irs zipcode data
+    author: ayush+11@simpledatalabs.com
+    createdAt: '2022-09-12 05:34:54'
+    physicalDatasets:
+      dev:
+        fabricId: 210
+        datasetType: File
+        description: ''
+        author: ayush+11@simpledatalabs.com
+        createdAt: '2022-09-12 05:34:54'
+  datasets/customers_orders:
+    name: customers_orders
+    description: Customers by total of their purchases
+    author: ayush+11@simpledatalabs.com
+    createdAt: '2022-09-12 05:34:52'
+    physicalDatasets:
+      dev:
+        fabricId: 210
+        datasetType: File
+        description: ''
+        author: ayush+11@simpledatalabs.com
+        createdAt: '2022-09-12 05:34:52'
+  datasets/customers:
+    name: customers
+    description: All the customers
+    author: ayush+11@simpledatalabs.com
+    createdAt: '2022-09-12 05:34:51'
+    physicalDatasets:
+      dev:
+        fabricId: 210
+        datasetType: File
+        description: ''
+        author: ayush+11@simpledatalabs.com
+        createdAt: '2022-09-12 05:34:51'
+  datasets/farmers_market_tax_report:
+    name: farmers_market_tax_report
+    description: Farmer's market tax report
+    author: ayush+11@simpledatalabs.com
+    createdAt: '2022-09-12 05:34:54'
+    physicalDatasets:
+      dev:
+        fabricId: 210
+        datasetType: File
+        description: ''
+        author: ayush+11@simpledatalabs.com
+        createdAt: '2022-09-12 05:34:54'
+  datasets/farmers-markets:
+    name: farmers-markets
+    description: Farmer's Market data
+    author: ayush+11@simpledatalabs.com
+    createdAt: '2022-09-12 05:34:53'
+    physicalDatasets:
+      dev:
+        fabricId: 210
+        datasetType: File
+        description: ''
+        author: ayush+11@simpledatalabs.com
+        createdAt: '2022-09-12 05:34:53'
+  datasets/historic_events_flat:
+    name: historic_events_flat
+    description: Historic events flat
+    author: ayush+11@simpledatalabs.com
+    createdAt: '2022-09-12 05:34:53'
+    physicalDatasets:
+      dev:
+        fabricId: 210
+        datasetType: File
+        description: ''
+        author: ayush+11@simpledatalabs.com
+        createdAt: '2022-09-12 05:34:53'
+  datasets/report:
+    name: report
+    description: Final report for the bank
+    author: ayush+11@simpledatalabs.com
+    createdAt: '2022-09-12 05:34:49'
+    physicalDatasets:
+      dev:
+        fabricId: 210
+        datasetType: File
+        description: ''
+        author: ayush+11@simpledatalabs.com
+        createdAt: '2022-09-12 05:34:49'
+  datasets/old_events:
+    name: old_events
+    description: Old events data
+    author: ayush+11@simpledatalabs.com
+    createdAt: '2022-09-12 05:34:52'
+    physicalDatasets:
+      dev:
+        fabricId: 210
+        datasetType: File
+        description: ''
+        author: ayush+11@simpledatalabs.com
+        createdAt: '2022-09-12 05:34:52'
+  datasets/customer_totals:
+    name: customer_totals
+    description: Customers by total of their purchases
+    author: ayush+11@simpledatalabs.com
+    createdAt: '2022-09-12 05:34:50'
+    physicalDatasets:
+      dev:
+        fabricId: 210
+        datasetType: File
+        description: ''
+        author: ayush+11@simpledatalabs.com
+        createdAt: '2022-09-12 05:34:50'
 templates: {}
-jobs: {}
+jobs:
+  jobs/customer_order_job:
+    name: customer_order_job
+    description: ''
+    fabricUID: 210
+    scheduler:
+      Databricks: {}
+    cloudProvider: null
+    jobSize: Small
+    scheduleCron: 0 0 0 * * ? *
+    timeout: null
+    alerting:
+      emails: kajari@prophecy.io
+      onStart: true
+      onSuccess: false
+      onFailure: false
+    pipelines:
+    - pipelines/customers_orders
+    - pipelines/join_agg_sort
+    jobClusterMode:
+      clusterMode:
+        Multi: {}
+      clusterId: null
+    enabled: null
+    createdAt: '2022-09-28 11:29:48'
+    author: ayush+11@simpledatalabs.com
 libraries: []
-subgraphs: {}
+subgraphs:
+  subgraphs/sub201:
+    name: sub201
+    description: ''
+    author: ayush+11@simpledatalabs.com
+    language: python
+    createdAt: '2022-09-29 04:52:29'
+  subgraphs/sub4:
+    name: sub4
+    description: ''
+    author: ayush+11@simpledatalabs.com
+    language: python
+    createdAt: '2022-10-01 12:41:28'
+  subgraphs/sub5:
+    name: sub5
+    description: ''
+    author: ayush+11@simpledatalabs.com
+    language: python
+    createdAt: '2022-10-01 12:43:01'
+  subgraphs/sub301:
+    name: sub301
+    description: ''
+    author: ayush+11@simpledatalabs.com
+    language: python
+    createdAt: '2022-09-29 04:54:52'
+  subgraphs/testSG:
+    name: testSG
+    description: ''
+    author: ayush+11@simpledatalabs.com
+    language: python
+    createdAt: '2022-09-29 04:40:33'
+  subgraphs/sub101:
+    name: sub101
+    description: ''
+    author: ayush+11@simpledatalabs.com
+    language: python
+    createdAt: '2022-09-29 04:47:44'
 sqlModels: {}
 sqlPipeline: null
-dependencies: '[]'
-projectDependencies: {}
-pipelineConfigurations: {}
+dependencies: []
